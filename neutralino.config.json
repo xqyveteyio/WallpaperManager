@@ -16,6 +16,9 @@
   "nativeAllowList": [
     "app.*",
     "os.*",
+    "window.*",
+    "storage.*",
+    "events.*",
     "debug.log"
   ],
   "globalVariables": {
@@ -34,7 +37,7 @@
     "window": {
       "title": "WallpaperManager",
       "center": true,
-      "fullScreen": true,
+      "fullScreen": false,
       "alwaysOnTop": false,
       "icon": "/resources/icons/appIcon.png",
       "enableInspector": false,
