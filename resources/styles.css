@@ -1,0 +1,32 @@
+body {
+    background-color: transparent;
+    margin: 0;
+    overflow: hidden;
+}
+
+#app {
+    display: flex;
+    align-items: center;
+    height: 100vh;
+    background-color: #fff;
+}
+
+#carousel-wrapper {
+    width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: thin;
+}
+
+
+#carousel-track {
+    display: flex;
+    width: max-content;
+}
+
+.wallpaper-card {
+    width: 320px;
+    height: 180px;
+    flex-shrink: 0;
+    cursor: pointer;
+}
