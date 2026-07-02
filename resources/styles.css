@@ -15,31 +15,12 @@ body {
     width: 100%;
     overflow-x: auto;
     overflow-y: hidden;
-    padding: 0 20px 16px;
     scrollbar-width: thin;
-    scrollbar-color: #aaa transparent;
 }
 
-#carousel-wrapper::-webkit-scrollbar {
-    height: 4px;
-}
-
-#carousel-wrapper::-webkit-scrollbar-track {
-    background: transparent;
-}
-
-#carousel-wrapper::-webkit-scrollbar-thumb {
-    background: #aaa;
-    border-radius: 2px;
-}
-
-#carousel-wrapper::-webkit-scrollbar-thumb:hover {
-    background: #888;
-}
 
 #carousel-track {
     display: flex;
-    gap: 12px;
     width: max-content;
 }
 
@@ -49,5 +30,20 @@ body {
     flex-shrink: 0;
     cursor: pointer;
     overflow: hidden;
-    background: #ddd;
+    position: relative;
+}
+
+.wallpaper-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: transparent;
+    z-index: 1;
+}
+
+.wallpaper-card.selected::before {
+    background: #ff692c;
 }

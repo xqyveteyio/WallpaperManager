@@ -39,14 +39,11 @@ function buildCarousel(wallpapers) {
 function selectWallpaper(index) {
     if (index < 0 || index >= allWallpapers.length) return;
 
-    document.querySelectorAll('.wallpaper-card').forEach(c => {
-        c.style.outline = '';
-    });
-
     currentIndex = index;
     const card = document.querySelector(`.wallpaper-card[data-index="${index}"]`);
     if (card) {
-        card.style.outline = '2px solid #555';
+        document.querySelectorAll('.wallpaper-card').forEach(c => c.classList.remove('selected'));
+        card.classList.add('selected');
         card.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
     }
 }
