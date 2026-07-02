@@ -3,13 +3,13 @@
 </script>
 
 <template>
-
+  <RouterView />
 </template>
 
-<style>
+<style lang="scss">
 #app {
   width: 100vw;
   height: 100vh;
-  background-color: var(--background-color);
+  background-color: transparent;
 }
 </style>

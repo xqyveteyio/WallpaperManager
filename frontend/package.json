@@ -8,7 +8,9 @@
   },
   "dependencies": {
     "add": "^2.0.6",
+    "sass": "^1.101.0",
     "vue": "^3.2.25",
+    "vue-router": "^5.1.0",
     "yarn": "^1.22.19"
   },
   "devDependencies": {

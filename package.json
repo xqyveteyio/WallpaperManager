@@ -6,5 +6,8 @@
     "license": "MIT",
     "scripts": {
         "serve:neu": "neu run --frontend-lib-dev -- --window-enable-inspector"
+    },
+    "dependencies": {
+        "vue-router": "^5.1.0"
     }
 }
