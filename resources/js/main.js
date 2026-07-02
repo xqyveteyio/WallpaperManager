@@ -335,6 +335,7 @@ async function openSourceManager() {
             width: 520,
             height: 380,
             alwaysOnTop: true,
+            borderless:false,
             center: true,
             resizable: false,
         });
@@ -368,7 +369,6 @@ function onTrayMenuItemClicked(event) {
 }
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
-
 document.getElementById('carousel-wrapper').addEventListener('wheel', (e) => {
     if (e.deltaY !== 0) {
         e.preventDefault();

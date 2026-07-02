@@ -140,9 +140,14 @@ confirmBtn.addEventListener('click', async () => {
     tip.textContent = '正在获取...';
 
     try {
-        const res  = await fetch(url);
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const json = await res.json();
+        // Use curl to bypass webview CORS restrictions
+        const result = await Neutralino.os.execCommand(`curl -sL --max-time 15 "${url}"`);
+        if (result.exitCode !== 0) throw new Error(result.stdErr || `curl exit ${result.exitCode}`);
+
+        let json;
+        try { json = JSON.parse(result.stdOut); }
+        catch { throw new Error('响应不是有效的 JSON'); }
+
         if (!Array.isArray(json.data)) throw new Error('格式错误：缺少 data 数组');
 
         const isFirst = sources.length === 0;
@@ -151,7 +156,7 @@ confirmBtn.addEventListener('click', async () => {
             name:              json.name              || url,
             description:       json.description       || '',
             author:            json.author            || '',
-            last_update:       json.last_update        || '',
+            last_update:       json.last_update       || '',
             download_interval: json.download_interval ?? 500,
             data:              json.data,
             active:            isFirst,
@@ -159,13 +164,15 @@ confirmBtn.addEventListener('click', async () => {
 
         await saveSources();
 
-        // Auto-activate the first source
+        // Close modal and refresh list immediately
+        overlay.classList.remove('visible');
+        confirmBtn.disabled = false;
+        renderList();
+
+        // Auto-activate first source
         if (isFirst) {
             await Neutralino.events.broadcast('source_activated', sources[0]);
         }
-
-        overlay.classList.remove('visible');
-        renderList();
     } catch (err) {
         tip.textContent = `获取失败：${err.message}`;
         confirmBtn.disabled = false;
