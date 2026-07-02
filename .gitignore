@@ -12,5 +12,8 @@ neutralino.js
 .storage
 *.log
 
-# Wallpaper cache
-wallpaper-cache/
+# Temporary files
+.tmp
+
+# Github files
+.github
