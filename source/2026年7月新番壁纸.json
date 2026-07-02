@@ -3,6 +3,7 @@
     "description": "anime_bg",
     "author": "anime_bg",
     "last_update": "2026-07-02 10:00:00",
+    "download_interval": 500,
     "data": [
         "https://images4.alphacoders.com/135/thumb-1920-1357925.png",
         "https://images8.alphacoders.com/136/thumb-1920-1362046.png",
