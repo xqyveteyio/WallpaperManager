@@ -8,7 +8,12 @@
   "enableNativeAPI": true,
   "nativeAllowList": [
     "app.*",
-    "os.*"
+    "os.*",
+    "window.*",
+    "storage.*",
+    "events.*",
+    "filesystem.*",
+    "debug.log"
   ],
   "modes": {
     "window": {
@@ -17,7 +22,8 @@
       "height": 600,
       "minWidth": 400,
       "minHeight": 200,
-      "icon": "/frontend/src/assets/logo.png"
+      "icon": "/frontend/src/assets/logo.png",
+      "transparent": true
     }
   },
   "cli": {
