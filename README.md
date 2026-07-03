@@ -8,4 +8,4 @@ WEBKIT_DISABLE_COMPOSITING_MODE=1 GDK_BACKEND=x11 ./dist/wallpaper-manager/wallp
 neu build --embed-resources
 
 
-# 跨平台的动画壁纸管理软件 支持设置不同的数据源，源就是一个json数组文件 仅此而已
+# 跨平台的动画壁纸管理软件 支持设置不同的数据源，源就是一个json数组文件 仅此而已////////............/////
