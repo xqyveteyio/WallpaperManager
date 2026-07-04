@@ -1,6 +1,7 @@
 <template>
     <div class="home-view">
-        <WallpaperCarousel :thumbs="wallpapers" @selectWallpaper="onSelectWallpaper" :current_wallpaper="current_wallpaper"/>
+        <WallpaperCarousel :thumbs="wallpapers" @selectWallpaper="onSelectWallpaper"
+            :current_wallpaper="current_wallpaper" />
     </div>
 </template>
 
@@ -9,6 +10,7 @@ import WallpaperCarousel from '@/components/WallpaperCarousel.vue';
 import { ref, onMounted } from 'vue';
 import { setupTray } from '@/utils/tray';
 import { quitApp } from '@/utils/lifecycle';
+import { fileDownloader } from '@/utils/file-manager'
 
 const current_wallpaper = ref<string>()
 const wallpapers = [
@@ -25,8 +27,10 @@ const wallpapers = [
     "https://images4.alphacoders.com/140/thumb-1920-1401145.png"
 ]
 
-const onSelectWallpaper = (url: string) => {
+const onSelectWallpaper = async (url: string) => {
     current_wallpaper.value = url
+    const res = await fileDownloader(url, "/home/keyboard/Documents/GitHub/WallpaperManager")
+    alert(res)
     
 }
 

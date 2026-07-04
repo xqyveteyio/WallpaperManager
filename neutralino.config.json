@@ -29,7 +29,7 @@
       "icon": "/frontend/src/assets/logo.png",
       "transparent": true,
       "exitProcessOnClose": false,
-      "enableInspector": false,
+      "enableInspector": true,
       "borderless": true
     }
   },
