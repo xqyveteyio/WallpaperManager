@@ -1,10 +1,11 @@
 <template>
-    <div>
-        <h1>Home</h1>
+    <div class="home-view">
+        <WallpaperCarousel/>
     </div>
 </template>
 
 <script setup lang="ts">
+import WallpaperCarousel from '@/components/WallpaperCarousel.vue';
 import { onMounted } from 'vue';
 import { setupTray } from '@/utils/tray';
 import { quitApp } from '@/utils/lifecycle';
@@ -15,3 +16,14 @@ onMounted(() => {
     Neutralino.events.on('windowClose', quitApp)
 })
 </script>
+
+
+<style lang="scss" scoped>
+.home-view {
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+</style>
