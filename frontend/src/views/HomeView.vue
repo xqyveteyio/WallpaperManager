@@ -27,8 +27,8 @@ const wallpapers = [
 
 const onSelectWallpaper = (url: string) => {
     current_wallpaper.value = url
+    
 }
-
 
 onMounted(() => {
     setupTray()
