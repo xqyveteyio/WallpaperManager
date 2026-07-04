@@ -17,14 +17,6 @@ export const loadLocalImageUsingBlob = async (filePath: string) => {
 
 export const fileDownloader = async (url: string, savePath: string) => {
     try {
-        // const response = await fetch(url);
-        // if (!response.ok) {
-        //     throw new Error(`网络请求失败，状态码: ${response.status}`);
-        // }
-        // const arrayBuffer = await response.arrayBuffer();
-        // await Neutralino.filesystem.writeBinaryFile(savePath, arrayBuffer);
-        // console.log('文件下载成功，保存至:', savePath);
-
         let command = '';
         if (NL_OS === 'Linux' || NL_OS === 'Darwin') {
             command = `curl -sL --max-time 60 "${url}" -o "${savePath}"`;
