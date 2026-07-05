@@ -23,3 +23,11 @@ tauri-plugin-opener = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 
+
+
+[profile.release]
+opt-level = "z"      # 以体积为优先（而非速度）
+lto = true           # 链接时优化，消除死代码
+codegen-units = 1    # 单编译单元，配合 lto 效果更好
+panic = "abort"      # 去掉 panic unwind 代码
+strip = true         # 自动 strip 符号表
