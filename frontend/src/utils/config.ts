@@ -17,6 +17,8 @@ export const openConfigWindow = async (): Promise<void> => {
         maximizable: false,
         exitProcessOnClose: true,
         processArgs: '--window-config',
+        fullScreen: false,
+        maximize: false,
     })
     configPid = proc.pid
 }

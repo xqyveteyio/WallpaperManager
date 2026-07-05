@@ -29,9 +29,13 @@ const wallpapers = [
 
 const onSelectWallpaper = async (url: string) => {
     current_wallpaper.value = url
-    const res = await fileDownloader(url, "/home/keyboard/Documents/GitHub/WallpaperManager")
-    alert(res)
-    
+    try {
+        const savedPath = await fileDownloader(url, "/home/keyboard/Documents/GitHub/WallpaperManager")
+        console.log('壁纸已下载至:', savedPath)
+    } catch (error) {
+        console.error('设置壁纸失败:', error)
+        alert(`下载失败: ${error instanceof Error ? error.message : error}`)
+    }
 }
 
 onMounted(() => {
