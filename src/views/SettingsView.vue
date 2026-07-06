@@ -41,12 +41,18 @@
 
                         <div class="source-meta">
                             <strong>{{ source.name }}</strong>
-                            <p>{{ source.description || '无描述' }}</p>
-                            <small>作者: {{ source.author || '未知' }} · 更新: {{ source.last_update || '未知' }}</small>
-                            <small>上次同步: {{ formatLastSyncedAt(source.lastSyncedAt) }}</small>
+                            <template v-if="isFavoritesSource(source)">
+                                <p>收藏数量: {{ source.data.length }}</p>
+                                <small>上次更改: {{ formatLastChangedAt(source.lastChangedAt) }}</small>
+                            </template>
+                            <template v-else>
+                                <p>{{ source.description || '无描述' }}</p>
+                                <small>作者: {{ source.author || '未知' }} · 更新: {{ source.last_update || '未知' }}</small>
+                                <small>上次同步: {{ formatLastSyncedAt(source.lastSyncedAt) }}</small>
+                            </template>
                         </div>
 
-                        <div class="source-actions">
+                        <div v-if="!isFavoritesSource(source)" class="source-actions">
                             <button type="button" :disabled="loadingSourceId === source.id" @click="syncSource(source)">
                                 {{ loadingSourceId === source.id ? '同步中' : '同步' }}
                             </button>
@@ -81,8 +87,8 @@
 </template>
 
 <script setup lang="ts">
-import { emit } from '@tauri-apps/api/event';
-import { reactive, ref } from 'vue';
+import { emit, listen, type UnlistenFn } from '@tauri-apps/api/event';
+import { onMounted, onUnmounted, reactive, ref } from 'vue';
 import {
     MAIN_WINDOW_SETTINGS_EVENT,
     type MainWindowPosition,
@@ -90,11 +96,13 @@ import {
     writeMainWindowSettings,
 } from '../utils/window-settings';
 import {
+    FAVORITES_SOURCE_ID,
     fetchWallpaperSource,
     readSelectedWallpaperSourceId,
     readWallpaperSources,
     syncWallpaperSourceIfStale,
     upsertWallpaperSource,
+    WALLPAPER_SOURCES_CHANGED_EVENT,
     WALLPAPER_SOURCE_SELECTED_EVENT,
     type WallpaperSource,
     writeSelectedWallpaperSourceId,
@@ -109,6 +117,7 @@ const isAddingSource = ref(false)
 const sourceUrl = ref('')
 const sourceError = ref('')
 const loadingSourceId = ref<string | null>(null)
+let unlistenSourcesChanged: UnlistenFn | null = null
 
 const positionOptions: Array<{ label: string, value: MainWindowPosition }> = [
     { label: '靠上', value: 'top' },
@@ -191,6 +200,10 @@ const syncSource = async (source: WallpaperSource) => {
 }
 
 const deleteSource = async (source: WallpaperSource) => {
+    if (isFavoritesSource(source)) {
+        return
+    }
+
     sources.value = sources.value.filter((item) => item.id !== source.id)
     writeWallpaperSources(sources.value)
 
@@ -212,6 +225,28 @@ const formatLastSyncedAt = (value: string) => {
 
     return date.toLocaleString()
 }
+
+const formatLastChangedAt = (value?: string) => {
+    if (!value) {
+        return '从未'
+    }
+
+    return formatLastSyncedAt(value)
+}
+
+const isFavoritesSource = (source: WallpaperSource) => {
+    return source.id === FAVORITES_SOURCE_ID
+}
+
+onMounted(async () => {
+    unlistenSourcesChanged = await listen(WALLPAPER_SOURCES_CHANGED_EVENT, () => {
+        sources.value = readWallpaperSources()
+    })
+})
+
+onUnmounted(() => {
+    unlistenSourcesChanged?.()
+})
 </script>
 
 <style lang="scss" scoped>

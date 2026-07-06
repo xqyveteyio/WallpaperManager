@@ -1,5 +1,5 @@
 import { createApp } from "vue";
-import { LogicalPosition, LogicalSize } from "@tauri-apps/api/dpi";
+import { PhysicalPosition, PhysicalSize } from "@tauri-apps/api/dpi";
 import { listen } from "@tauri-apps/api/event";
 import { cursorPosition, getCurrentWindow, monitorFromPoint, primaryMonitor } from "@tauri-apps/api/window";
 import "./style.css";
@@ -47,16 +47,16 @@ const applyMainWindowSettings = async (settings: MainWindowSettings) => {
         return
     }
 
-    const width = monitor.size.width / monitor.scaleFactor
-    const height = 140
-    const x = monitor.position.x / monitor.scaleFactor
-    const monitorY = monitor.position.y / monitor.scaleFactor
-    const monitorHeight = monitor.size.height / monitor.scaleFactor
+    const width = monitor.size.width
+    const height = Math.round(140 * monitor.scaleFactor)
+    const x = monitor.position.x
+    const monitorY = monitor.position.y
+    const monitorHeight = monitor.size.height
     const y = getWindowY(settings.position, monitorY, monitorHeight, height)
 
     await appWindow.setAlwaysOnTop(settings.alwaysOnTop)
-    await appWindow.setPosition(new LogicalPosition(x, y))
-    await appWindow.setSize(new LogicalSize(width, height))
+    await appWindow.setSize(new PhysicalSize(width, height))
+    await appWindow.setPosition(new PhysicalPosition(x, y))
 }
 
 const setupMainWindow = async () => {

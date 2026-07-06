@@ -1,7 +1,7 @@
 <template>
     <div class="home-view">
         <WallpaperCarousel :thumbs="wallpaperThumbnailSrcs" @selectWallpaper="onSelectWallpaper"
-            :current_wallpaper="currentWallpaper" />
+            @favoriteWallpaper="onFavoriteWallpaper" :current_wallpaper="currentWallpaper" />
     </div>
 </template>
 
@@ -15,6 +15,8 @@ import { BaseDirectory, exists, mkdir, readDir, readFile, remove, writeFile } fr
 import { Command } from '@tauri-apps/plugin-shell';
 import { download } from '@tauri-apps/plugin-upload';
 import {
+    FAVORITES_SOURCE_ID,
+    addFavoriteWallpaper,
     getSelectedWallpaperSource,
     syncWallpaperSourceIfStale,
     WALLPAPER_SOURCE_SELECTED_EVENT,
@@ -30,6 +32,7 @@ const SelectedWallpaperSource = ref<WallpaperSource | null>(null)
 const wallpaperThumbnailPaths = ref<string[]>([])
 const wallpaperThumbnailSrcs = ref<string[]>([])
 const wallpaperFilePaths = ref<string[]>([])
+const wallpaperOriginalRelativePaths = ref<string[]>([])
 
 const setWallpaper = async (file_path: string) => {
     const isWindows = navigator.userAgent.toLowerCase().includes('windows')
@@ -56,6 +59,18 @@ const onSelectWallpaper = async (index: number) => {
     const filePath = wallpaperFilePaths.value[index]
     if (filePath) {
         await setWallpaper(filePath)
+    }
+}
+
+const onFavoriteWallpaper = async (index: number) => {
+    const originalRelativePath = wallpaperOriginalRelativePaths.value[index]
+    if (!originalRelativePath) {
+        return
+    }
+
+    const favoritesSource = await addFavoriteWallpaper(originalRelativePath)
+    if (SelectedWallpaperSource.value?.id === FAVORITES_SOURCE_ID) {
+        await loadWallpaperSource(favoritesSource)
     }
 }
 
@@ -154,6 +169,14 @@ const cleanupCachedFiles = async (dir: string, keepFilenames: Set<string>) => {
     }))
 }
 
+const getOriginalFilename = (source: WallpaperSource, url: string, index: number) => {
+    if (source.id === FAVORITES_SOURCE_ID) {
+        return url.split('/').pop() ?? `${index}-wallpaper`
+    }
+
+    return getWallpaperFilename(url, index)
+}
+
 const getWallpapers = async (source: WallpaperSource) => {
     const sourceDir = `${WALLPAPER_DOWNLOAD_DIR}/${source.id}`
     const originalsDir = `${sourceDir}/originals`
@@ -167,7 +190,7 @@ const getWallpapers = async (source: WallpaperSource) => {
     const thumbnailFilenames = new Set<string>()
 
     source.data.forEach((url, index) => {
-        const originalFilename = getWallpaperFilename(url, index)
+        const originalFilename = getOriginalFilename(source, url, index)
         originalFilenames.add(originalFilename)
         thumbnailFilenames.add(getThumbnailFilename(originalFilename))
     })
@@ -176,15 +199,17 @@ const getWallpapers = async (source: WallpaperSource) => {
     await cleanupCachedFiles(thumbnailsDir, thumbnailFilenames)
 
     for (const [index, url] of source.data.entries()) {
-        const originalFilename = getWallpaperFilename(url, index)
+        const originalFilename = getOriginalFilename(source, url, index)
         const thumbnailFilename = getThumbnailFilename(originalFilename)
-        const originalRelativePath = `${originalsDir}/${originalFilename}`
+        const originalRelativePath = source.id === FAVORITES_SOURCE_ID
+            ? url
+            : `${originalsDir}/${originalFilename}`
         const thumbnailRelativePath = `${thumbnailsDir}/${thumbnailFilename}`
         const originalPath = await join(appData, originalRelativePath)
         const thumbnailPath = await join(appData, thumbnailRelativePath)
 
         try {
-            if (!(await exists(originalRelativePath, { baseDir: BaseDirectory.AppData }))) {
+            if (source.id !== FAVORITES_SOURCE_ID && !(await exists(originalRelativePath, { baseDir: BaseDirectory.AppData }))) {
                 await download(url, originalPath)
             }
 
@@ -196,6 +221,7 @@ const getWallpapers = async (source: WallpaperSource) => {
             }
 
             wallpaperFilePaths.value[index] = originalPath
+            wallpaperOriginalRelativePaths.value[index] = originalRelativePath
             wallpaperThumbnailPaths.value[index] = thumbnailPath
             wallpaperThumbnailSrcs.value[index] = convertFileSrc(thumbnailPath)
         } catch (error) {
@@ -208,6 +234,7 @@ const loadWallpaperSource = async (source: WallpaperSource) => {
     SelectedWallpaperSource.value = source
     currentWallpaper.value = ''
     wallpaperFilePaths.value = []
+    wallpaperOriginalRelativePaths.value = []
     wallpaperThumbnailPaths.value = []
     wallpaperThumbnailSrcs.value = []
     await getWallpapers(source);
@@ -228,6 +255,7 @@ onMounted(async () => {
         SelectedWallpaperSource.value = null
         currentWallpaper.value = ''
         wallpaperFilePaths.value = []
+        wallpaperOriginalRelativePaths.value = []
         wallpaperThumbnailPaths.value = []
         wallpaperThumbnailSrcs.value = []
     })

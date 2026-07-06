@@ -1,5 +1,6 @@
 import { appDataDir, join } from '@tauri-apps/api/path';
-import { BaseDirectory, exists, mkdir, readFile } from '@tauri-apps/plugin-fs';
+import { emit } from '@tauri-apps/api/event';
+import { BaseDirectory, exists, mkdir, readFile, writeFile } from '@tauri-apps/plugin-fs';
 import { download } from '@tauri-apps/plugin-upload';
 
 export interface WallpaperSourceData {
@@ -14,9 +15,14 @@ export interface WallpaperSource extends WallpaperSourceData {
     id: string
     url: string
     lastSyncedAt: string
+    kind?: 'remote' | 'favorites'
+    lastChangedAt?: string
 }
 
 export const WALLPAPER_SOURCE_SELECTED_EVENT = 'wallpaper-source-selected'
+export const WALLPAPER_SOURCES_CHANGED_EVENT = 'wallpaper-sources-changed'
+export const FAVORITES_SOURCE_ID = 'favorites'
+export const FAVORITES_ORIGINALS_DIR = `wallpaper_downloads/${FAVORITES_SOURCE_ID}/originals`
 const WALLPAPER_SOURCE_DOWNLOAD_DIR = 'wallpaper_sources'
 const WALLPAPER_SOURCES_STORAGE_KEY = 'wallpaper-sources'
 const SELECTED_WALLPAPER_SOURCE_ID_STORAGE_KEY = 'selected-wallpaper-source-id'
@@ -25,24 +31,32 @@ const SOURCE_SYNC_INTERVAL = 24 * 60 * 60 * 1000
 export const readWallpaperSources = (): WallpaperSource[] => {
     const rawSources = localStorage.getItem(WALLPAPER_SOURCES_STORAGE_KEY)
     if (!rawSources) {
-        return []
+        return [createDefaultFavoritesSource()]
     }
 
     try {
         const sources = JSON.parse(rawSources) as unknown
         if (!Array.isArray(sources)) {
-            return []
+            return [createDefaultFavoritesSource()]
         }
 
-        return sources
+        const parsedSources = sources
             .filter(isWallpaperSource)
             .map((source) => ({
                 ...source,
                 lastSyncedAt: source.lastSyncedAt || new Date(0).toISOString(),
+                kind: source.kind ?? 'remote',
             }))
+        const favoritesSource = parsedSources.find((source) => source.id === FAVORITES_SOURCE_ID)
+            ?? createDefaultFavoritesSource()
+
+        return [
+            normalizeFavoritesSource(favoritesSource),
+            ...parsedSources.filter((source) => source.id !== FAVORITES_SOURCE_ID),
+        ]
     } catch (error) {
         console.warn('读取壁纸源失败:', error)
-        return []
+        return [createDefaultFavoritesSource()]
     }
 }
 
@@ -87,10 +101,15 @@ export const fetchWallpaperSource = async (url: string): Promise<WallpaperSource
         id,
         url,
         lastSyncedAt: new Date().toISOString(),
+        kind: 'remote',
     }
 }
 
 export const syncWallpaperSourceIfStale = async (source: WallpaperSource) => {
+    if (source.id === FAVORITES_SOURCE_ID) {
+        return source
+    }
+
     if (!isWallpaperSourceStale(source)) {
         return source
     }
@@ -98,6 +117,30 @@ export const syncWallpaperSourceIfStale = async (source: WallpaperSource) => {
     const syncedSource = await fetchWallpaperSource(source.url)
     upsertWallpaperSource(syncedSource)
     return syncedSource
+}
+
+export const addFavoriteWallpaper = async (sourceRelativePath: string) => {
+    await ensureAppDataDir(FAVORITES_ORIGINALS_DIR)
+
+    const filename = getFavoriteFilename(sourceRelativePath)
+    const favoriteRelativePath = `${FAVORITES_ORIGINALS_DIR}/${filename}`
+    const sourceData = await readFile(sourceRelativePath, { baseDir: BaseDirectory.AppData })
+    await writeFile(favoriteRelativePath, sourceData, { baseDir: BaseDirectory.AppData })
+
+    const sources = readWallpaperSources()
+    const favoritesSource = normalizeFavoritesSource(
+        sources.find((source) => source.id === FAVORITES_SOURCE_ID) ?? createDefaultFavoritesSource(),
+    )
+
+    if (!favoritesSource.data.includes(favoriteRelativePath)) {
+        favoritesSource.data.push(favoriteRelativePath)
+    }
+
+    favoritesSource.lastChangedAt = new Date().toISOString()
+    upsertWallpaperSource(favoritesSource)
+    await emit(WALLPAPER_SOURCES_CHANGED_EVENT)
+
+    return favoritesSource
 }
 
 export const upsertWallpaperSource = (source: WallpaperSource) => {
@@ -145,6 +188,8 @@ const isWallpaperSource = (value: unknown): value is WallpaperSource => {
         && typeof value.author === 'string'
         && typeof value.last_update === 'string'
         && (typeof value.lastSyncedAt === 'string' || typeof value.lastSyncedAt === 'undefined')
+        && (typeof value.kind === 'string' || typeof value.kind === 'undefined')
+        && (typeof value.lastChangedAt === 'string' || typeof value.lastChangedAt === 'undefined')
         && Array.isArray(value.data)
         && value.data.every((item) => typeof item === 'string')
 }
@@ -166,9 +211,43 @@ const isWallpaperSourceStale = (source: WallpaperSource) => {
     return Date.now() - lastSyncedAt > SOURCE_SYNC_INTERVAL
 }
 
+const createDefaultFavoritesSource = (): WallpaperSource => {
+    return {
+        id: FAVORITES_SOURCE_ID,
+        url: 'favorites://local',
+        kind: 'favorites',
+        name: '收藏夹',
+        description: '收藏的壁纸',
+        author: 'local',
+        last_update: '',
+        lastSyncedAt: new Date(0).toISOString(),
+        lastChangedAt: new Date(0).toISOString(),
+        data: [],
+    }
+}
+
+const normalizeFavoritesSource = (source: WallpaperSource): WallpaperSource => {
+    return {
+        ...createDefaultFavoritesSource(),
+        ...source,
+        id: FAVORITES_SOURCE_ID,
+        url: 'favorites://local',
+        kind: 'favorites',
+        name: '收藏夹',
+        description: '收藏的壁纸',
+        author: 'local',
+        lastChangedAt: source.lastChangedAt ?? new Date(0).toISOString(),
+        data: Array.isArray(source.data) ? source.data : [],
+    }
+}
+
 const ensureSourceDownloadDir = async () => {
-    if (!(await exists(WALLPAPER_SOURCE_DOWNLOAD_DIR, { baseDir: BaseDirectory.AppData }))) {
-        await mkdir(WALLPAPER_SOURCE_DOWNLOAD_DIR, {
+    await ensureAppDataDir(WALLPAPER_SOURCE_DOWNLOAD_DIR)
+}
+
+const ensureAppDataDir = async (dir: string) => {
+    if (!(await exists(dir, { baseDir: BaseDirectory.AppData }))) {
+        await mkdir(dir, {
             baseDir: BaseDirectory.AppData,
             recursive: true,
         })
@@ -183,4 +262,19 @@ const createWallpaperSourceId = (url: string) => {
     }
 
     return `source-${(hash >>> 0).toString(16)}`
+}
+
+const getFavoriteFilename = (sourceRelativePath: string) => {
+    const sourceFilename = sourceRelativePath.split('/').pop() ?? 'wallpaper'
+    return `${createPathHash(sourceRelativePath)}-${sourceFilename.replace(/[^a-zA-Z0-9._-]/g, '-')}`
+}
+
+const createPathHash = (value: string) => {
+    let hash = 2166136261
+    for (let index = 0; index < value.length; index += 1) {
+        hash ^= value.charCodeAt(index)
+        hash = Math.imul(hash, 16777619)
+    }
+
+    return (hash >>> 0).toString(16)
 }

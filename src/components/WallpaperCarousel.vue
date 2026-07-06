@@ -1,8 +1,13 @@
 <template>
-    <div class="wallpaper-carousel" ref="wallpaperCarouselRef">
+    <div class="wallpaper-carousel" ref="wallpaperCarouselRef" @click="closeContextMenu">
         <div class="thumb-item" v-for="(item, index) in thumbs" @click="handleClick($event, index)"
-            :class="{ 'active': current_wallpaper === item }">
+            @contextmenu.prevent.stop="openContextMenu($event, index)" :class="{ 'active': current_wallpaper === item }">
             <img :src="item" alt="">
+        </div>
+
+        <div v-if="contextMenu.visible" class="context-menu"
+            :style="{ left: `${contextMenu.x}px`, top: `${contextMenu.y}px` }">
+            <button type="button" @click.stop="favoriteWallpaper">收藏此壁纸</button>
         </div>
     </div>
 </template>
@@ -20,8 +25,15 @@ withDefaults(defineProps<Props>(), {
 })
 const emit = defineEmits<{
     (e: 'selectWallpaper', index: number): void
+    (e: 'favoriteWallpaper', index: number): void
 }>()
 const wallpaperCarouselRef = ref<HTMLDivElement | null>(null)
+const contextMenu = ref({
+    visible: false,
+    index: -1,
+    x: 0,
+    y: 0,
+})
 
 const handleClick = (event: MouseEvent, index: number) => {
     emit('selectWallpaper', index)
@@ -38,6 +50,27 @@ const handleClick = (event: MouseEvent, index: number) => {
         })
     }
 }
+
+const openContextMenu = (event: MouseEvent, index: number) => {
+    contextMenu.value = {
+        visible: true,
+        index,
+        x: event.clientX,
+        y: event.clientY,
+    }
+}
+
+const closeContextMenu = () => {
+    contextMenu.value.visible = false
+}
+
+const favoriteWallpaper = () => {
+    if (contextMenu.value.index >= 0) {
+        emit('favoriteWallpaper', contextMenu.value.index)
+    }
+
+    closeContextMenu()
+}
 </script>
 
 <style lang="scss" scoped>
@@ -48,6 +81,7 @@ const handleClick = (event: MouseEvent, index: number) => {
     display: flex;
     overflow-y: hidden;
     overflow-x: auto;
+    position: relative;
 
     .thumb-item {
         width: auto;
@@ -70,6 +104,33 @@ const handleClick = (event: MouseEvent, index: number) => {
                 height: 4px;
                 background-color: #ff692c;
             }
+        }
+    }
+}
+
+.context-menu {
+    position: fixed;
+    z-index: 1000;
+    min-width: 140px;
+    padding: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 10px;
+    background-color: rgba(34, 34, 34, 0.95);
+    box-shadow: 0 12px 34px rgba(0, 0, 0, 0.35);
+
+    button {
+        width: 100%;
+        height: 34px;
+        padding: 0 12px;
+        border: 0;
+        border-radius: 8px;
+        background: transparent;
+        color: #fff;
+        text-align: left;
+        cursor: pointer;
+
+        &:hover {
+            background-color: rgba(255, 255, 255, 0.1);
         }
     }
 }
