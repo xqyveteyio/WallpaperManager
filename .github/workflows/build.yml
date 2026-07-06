@@ -54,18 +54,28 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 22
-          cache: yarn
-          cache-dependency-path: yarn.lock
+          node-version: 24
 
       - name: Enable Corepack
-        run: corepack enable
+        run: |
+          corepack enable
+          corepack prepare yarn@4.17.0 --activate
+
+      - name: Cache Yarn Berry
+        uses: actions/cache@v4
+        with:
+          path: |
+            .yarn/cache
+            .yarn/install-state.gz
+          key: yarn-${{ runner.os }}-${{ hashFiles('yarn.lock') }}
+          restore-keys: |
+            yarn-${{ runner.os }}-
 
       - name: Install frontend dependencies
         run: yarn install --immutable
 
       - name: Build Tauri app
-        uses: tauri-apps/tauri-action@v0
+        uses: tauri-apps/tauri-action@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
