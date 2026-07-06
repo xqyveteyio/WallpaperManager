@@ -1,71 +1,67 @@
 <template>
     <div class="settings-view">
-        <div class="settings-panel">
-            <h1>设置</h1>
+        <section class="setting-group">
+            <h2>壁纸轮盘位置</h2>
+            <div class="position-options">
+                <button v-for="option in positionOptions" :key="option.value"
+                    :class="{ active: settings.position === option.value }" type="button"
+                    @click="setPosition(option.value)">
+                    {{ option.label }}
+                </button>
+            </div>
+        </section>
 
-            <section class="setting-group">
-                <h2>主窗口位置</h2>
-                <div class="position-options">
-                    <button v-for="option in positionOptions" :key="option.value"
-                        :class="{ active: settings.position === option.value }" type="button"
-                        @click="setPosition(option.value)">
-                        {{ option.label }}
-                    </button>
-                </div>
-            </section>
+        <section class="setting-group">
+            <label class="switch-row">
+                <span>
+                    <span>始终置顶</span>
+                    <small>开启后主窗口会保持在其他窗口上方</small>
+                </span>
+                <input v-model="settings.alwaysOnTop" type="checkbox" @change="saveSettings" />
+            </label>
+        </section>
 
-            <section class="setting-group">
-                <label class="switch-row">
-                    <span>
-                        <strong>始终置顶</strong>
-                        <small>开启后主窗口会保持在其他窗口上方</small>
-                    </span>
-                    <input v-model="settings.alwaysOnTop" type="checkbox" @change="saveSettings" />
-                </label>
-            </section>
+        <section class="setting-group">
+            <div class="section-title-row">
+                <h2>壁纸源</h2>
+                <button class="add-source-button" type="button" @click="openAddSourceModal">
+                    添加源
+                </button>
+            </div>
 
-            <section class="setting-group">
-                <div class="section-title-row">
-                    <h2>壁纸源</h2>
-                    <button class="add-source-button" type="button" @click="openAddSourceModal">
-                        添加源
-                    </button>
-                </div>
+            <div v-if="sources.length" class="source-list">
+                <div v-for="source in sources" :key="source.id" class="source-item">
+                    <label class="source-select">
+                        <input :checked="selectedSourceId === source.id" name="wallpaper-source" type="radio"
+                            @change="selectSource(source)" />
+                    </label>
 
-                <div v-if="sources.length" class="source-list">
-                    <div v-for="source in sources" :key="source.id" class="source-item">
-                        <label class="source-select">
-                            <input :checked="selectedSourceId === source.id" name="wallpaper-source" type="radio"
-                                @change="selectSource(source)" />
-                        </label>
+                    <div class="source-meta">
+                        <span>{{ source.name }}</span>
+                        <template v-if="isFavoritesSource(source)">
+                            <p>收藏数量: {{ source.data.length }}</p>
+                            <small>上次更改: {{ formatLastChangedAt(source.lastChangedAt) }}</small>
+                        </template>
+                        <template v-else>
+                            <p>{{ source.description || '无描述' }}</p>
+                            <small>作者: {{ source.author || '未知' }} · 更新: {{ source.last_update || '未知' }}</small>
+                            <small>上次同步: {{ formatLastSyncedAt(source.lastSyncedAt) }}</small>
+                        </template>
+                    </div>
 
-                        <div class="source-meta">
-                            <strong>{{ source.name }}</strong>
-                            <template v-if="isFavoritesSource(source)">
-                                <p>收藏数量: {{ source.data.length }}</p>
-                                <small>上次更改: {{ formatLastChangedAt(source.lastChangedAt) }}</small>
-                            </template>
-                            <template v-else>
-                                <p>{{ source.description || '无描述' }}</p>
-                                <small>作者: {{ source.author || '未知' }} · 更新: {{ source.last_update || '未知' }}</small>
-                                <small>上次同步: {{ formatLastSyncedAt(source.lastSyncedAt) }}</small>
-                            </template>
-                        </div>
-
-                        <div v-if="!isFavoritesSource(source)" class="source-actions">
-                            <button type="button" :disabled="loadingSourceId === source.id" @click="syncSource(source)">
-                                {{ loadingSourceId === source.id ? '同步中' : '同步' }}
-                            </button>
-                            <button class="danger" type="button" @click="deleteSource(source)">
-                                删除
-                            </button>
-                        </div>
+                    <div v-if="!isFavoritesSource(source)" class="source-actions">
+                        <button type="button" :disabled="loadingSourceId === source.id" @click="syncSource(source)">
+                            {{ loadingSourceId === source.id ? '同步中' : '同步' }}
+                        </button>
+                        <button class="danger" type="button" @click="deleteSource(source)">
+                            删除
+                        </button>
                     </div>
                 </div>
+            </div>
 
-                <p v-else class="empty-source">还没有壁纸源，点击“添加源”导入一个在线 JSON。</p>
-            </section>
-        </div>
+            <p v-else class="empty-source">还没有壁纸源，点击“添加源”导入一个在线 JSON。</p>
+        </section>
 
         <div v-if="isAddSourceModalOpen" class="modal-mask" @click.self="closeAddSourceModal">
             <div class="modal">
@@ -254,38 +250,29 @@ onUnmounted(() => {
     width: 100vw;
     height: 100vh;
     display: flex;
-    justify-content: center;
-    align-items: center;
-    background-color: #1e1e1e;
-    color: #fff;
+    flex-direction: column;
+    gap: 18px;
+    padding: 26px;
+    box-sizing: border-box;
+    color: #1f2937;
+    background: #fff;
     overflow: auto;
-}
-
-.settings-panel {
-    width: min(860px, calc(100vw - 48px));
-    max-height: calc(100vh - 48px);
-    overflow: auto;
-    padding: 28px;
-    border-radius: 16px;
-    background-color: #282828;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
-
-    h1 {
-        margin-bottom: 24px;
-        font-size: 28px;
-    }
 }
 
 .setting-group {
     display: flex;
     flex-direction: column;
-    gap: 12px;
-    padding: 18px 0;
-    border-top: 1px solid rgba(255, 255, 255, 0.12);
+    gap: 14px;
+    width: 100%;
+    padding: 20px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
 
     h2 {
+        margin: 0;
         font-size: 16px;
-        font-weight: 600;
+        font-weight: 500;
+        color: #111827;
     }
 }
 
@@ -297,13 +284,19 @@ onUnmounted(() => {
 }
 
 .add-source-button {
-    height: 34px;
-    padding: 0 14px;
+    height: 36px;
+    padding: 0 16px;
     border: 0;
-    border-radius: 9px;
+    border-radius: 999px;
     background-color: #ff692c;
     color: #fff;
+    font-weight: 600;
     cursor: pointer;
+    transition: background-color 0.16s ease;
+
+    &:hover {
+        background-color: #ff692c;
+    }
 }
 
 .position-options {
@@ -312,16 +305,22 @@ onUnmounted(() => {
     gap: 10px;
 
     button {
-        height: 40px;
-        border: 1px solid rgba(255, 255, 255, 0.16);
-        border-radius: 10px;
-        background-color: #333;
-        color: #fff;
+        height: 44px;
+        border: 0;
+        border-radius: 14px;
+        background-color: #f8fafc;
+        color: #475569;
         cursor: pointer;
+        transition: color 0.16s ease, background-color 0.16s ease;
+
+        &:hover {
+            background-color: #fff7ed;
+            color: #ff692c;
+        }
 
         &.active {
-            border-color: #ff692c;
-            background-color: #ff692c;
+            background-color: #fff5ef;
+            color: #ff692c;
         }
     }
 }
@@ -337,18 +336,27 @@ onUnmounted(() => {
     grid-template-columns: auto minmax(0, 1fr) auto;
     gap: 14px;
     align-items: center;
-    padding: 14px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 12px;
-    background-color: rgba(255, 255, 255, 0.04);
+    padding: 12px 0;
+    border-bottom: 1px solid #e2e8f0;
 }
 
 .source-select {
     display: flex;
+
+    input {
+        width: 18px;
+        height: 18px;
+        accent-color: #ff692c;
+        cursor: pointer;
+    }
 }
 
 .source-meta {
     min-width: 0;
+
+    strong {
+        color: #111827;
+    }
 
     strong,
     p,
@@ -361,11 +369,11 @@ onUnmounted(() => {
 
     p {
         margin: 6px 0;
-        color: rgba(255, 255, 255, 0.72);
+        color: #64748b;
     }
 
     small {
-        color: rgba(255, 255, 255, 0.56);
+        color: #94a3b8;
     }
 }
 
@@ -376,11 +384,19 @@ onUnmounted(() => {
     button {
         height: 34px;
         padding: 0 12px;
-        border: 1px solid rgba(255, 255, 255, 0.14);
-        border-radius: 9px;
-        background-color: #333;
-        color: #fff;
+        border: 0;
+        border-radius: 10px;
+        background-color: #f8fafc;
+        color: #334155;
+        font-weight: 600;
         cursor: pointer;
+        transition: color 0.16s ease, background-color 0.16s ease;
+        font-weight: 500;
+
+        &:hover:not(:disabled) {
+            background-color: #fff7ed;
+            color: #ff692c;
+        }
 
         &:disabled {
             cursor: not-allowed;
@@ -388,18 +404,28 @@ onUnmounted(() => {
         }
 
         &.danger {
-            border-color: rgba(255, 96, 96, 0.5);
-            color: #ff8a8a;
+            background-color: #fff5f5;
+            color: #dc2626;
+
+
+            &:hover {
+                background-color: #fee2e2;
+                color: #b91c1c;
+            }
         }
     }
 }
 
 .empty-source {
-    color: rgba(255, 255, 255, 0.62);
+    margin: 0;
+    padding: 18px 0;
+    color: #64748b;
+    text-align: center;
 }
 
 .source-error {
-    color: #ff8a8a;
+    margin: 12px 0 0;
+    color: #dc2626;
 }
 
 .modal-mask {
@@ -409,35 +435,42 @@ onUnmounted(() => {
     align-items: center;
     justify-content: center;
     padding: 24px;
-    background-color: rgba(0, 0, 0, 0.5);
+    background-color: rgba(15, 23, 42, 0.28);
+    backdrop-filter: blur(8px);
 }
 
 .modal {
     width: min(460px, 100%);
     padding: 24px;
-    border: 1px solid rgba(255, 255, 255, 0.14);
-    border-radius: 16px;
-    background-color: rgba(40, 40, 40, 0.92);
-    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.45);
-    backdrop-filter: blur(18px);
+    border-radius: 14px;
+    background-color: rgba(255, 255, 255, 0.96);
 
     h2 {
+        margin-top: 0;
         margin-bottom: 18px;
+        color: #111827;
     }
 
     label {
         display: flex;
         flex-direction: column;
         gap: 8px;
+        color: #475569;
+        font-weight: 600;
     }
 
     input {
-        height: 40px;
+        height: 42px;
         padding: 0 12px;
-        border: 1px solid rgba(255, 255, 255, 0.16);
-        border-radius: 10px;
-        background-color: #1e1e1e;
-        color: #fff;
+        border: 0;
+        border-radius: 12px;
+        background-color: #f8fafc;
+        color: #111827;
+        outline: none;
+
+        &::placeholder {
+            color: #94a3b8;
+        }
     }
 }
 
@@ -450,15 +483,27 @@ onUnmounted(() => {
     button {
         height: 36px;
         padding: 0 16px;
-        border: 1px solid rgba(255, 255, 255, 0.14);
-        border-radius: 10px;
-        background-color: #333;
-        color: #fff;
+        border: 0;
+        border-radius: 999px;
+        background-color: #f8fafc;
+        color: #475569;
+        font-weight: 600;
         cursor: pointer;
+        transition: color 0.16s ease, background-color 0.16s ease;
+
+        &:hover:not(:disabled) {
+            background-color: #eef2f7;
+            color: #111827;
+        }
 
         &:last-child {
-            border-color: #ff692c;
             background-color: #ff692c;
+            color: #fff;
+
+            &:hover:not(:disabled) {
+                background-color: #f45e20;
+                color: #fff;
+            }
         }
 
         &:disabled {
@@ -473,6 +518,7 @@ onUnmounted(() => {
     align-items: center;
     justify-content: space-between;
     gap: 20px;
+    padding: 4px 0;
 
     span {
         display: flex;
@@ -480,14 +526,44 @@ onUnmounted(() => {
         gap: 6px;
     }
 
+    strong {
+        color: #111827;
+    }
+
     small {
-        color: rgba(255, 255, 255, 0.62);
+        color: #64748b;
     }
 
     input {
-        width: 42px;
-        height: 22px;
+        position: relative;
+        width: 46px;
+        height: 26px;
+        flex: 0 0 auto;
+        appearance: none;
+        border-radius: 999px;
+        background-color: #cbd5e1;
         cursor: pointer;
+        transition: background-color 0.16s ease;
+
+        &::after {
+            content: "";
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background-color: #fff;
+            transition: transform 0.16s ease;
+        }
+
+        &:checked {
+            background-color: #ff692c;
+        }
+
+        &:checked::after {
+            transform: translateX(20px);
+        }
     }
 }
 </style>
