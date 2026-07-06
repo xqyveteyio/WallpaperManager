@@ -85,7 +85,7 @@ jobs:
           args: ${{ matrix.platform.args }}
 
       - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: wallpaper-manager-${{ matrix.platform.name }}
           path: ${{ matrix.platform.artifact-path }}/**
