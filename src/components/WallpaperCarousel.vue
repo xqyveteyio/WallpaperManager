@@ -1,27 +1,32 @@
 <template>
     <div class="wallpaper-carousel" ref="wallpaperCarouselRef" @click="closeContextMenu">
         <div class="thumb-item" v-for="(item, index) in thumbs" @click="handleClick($event, index)"
-            @contextmenu.prevent.stop="openContextMenu($event, index)" :class="{ 'active': current_wallpaper === item }">
+            @contextmenu.prevent.stop="openContextMenu($event, index)"
+            :class="{ 'active': current_wallpaper === item }">
             <img :src="item" alt="">
         </div>
 
         <div v-if="contextMenu.visible" class="context-menu"
             :style="{ left: `${contextMenu.x}px`, top: `${contextMenu.y}px` }">
-            <button type="button" @click.stop="favoriteWallpaper">收藏此壁纸</button>
+            <button type="button" :disabled="isContextMenuItemFavorited" @click.stop="favoriteWallpaper">
+                {{ isContextMenuItemFavorited ? '已收藏' : '收藏此壁纸' }}
+            </button>
         </div>
     </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 
 interface Props {
     thumbs?: string[]
+    favorited?: boolean[]
     current_wallpaper: string
 }
-withDefaults(defineProps<Props>(), {
+const props = withDefaults(defineProps<Props>(), {
     current_wallpaper: "",
-    thumbs: () => []
+    thumbs: () => [],
+    favorited: () => [],
 })
 const emit = defineEmits<{
     (e: 'selectWallpaper', index: number): void
@@ -33,6 +38,10 @@ const contextMenu = ref({
     index: -1,
     x: 0,
     y: 0,
+})
+
+const isContextMenuItemFavorited = computed(() => {
+    return props.favorited[contextMenu.value.index] ?? false
 })
 
 const handleClick = (event: MouseEvent, index: number) => {
@@ -65,6 +74,11 @@ const closeContextMenu = () => {
 }
 
 const favoriteWallpaper = () => {
+    if (isContextMenuItemFavorited.value) {
+        closeContextMenu()
+        return
+    }
+
     if (contextMenu.value.index >= 0) {
         emit('favoriteWallpaper', contextMenu.value.index)
     }
@@ -77,7 +91,7 @@ const favoriteWallpaper = () => {
 .wallpaper-carousel {
     width: 100%;
     height: 140px;
-    background-color: skyblue;
+    background-color: white;
     display: flex;
     overflow-y: hidden;
     overflow-x: auto;
@@ -129,7 +143,12 @@ const favoriteWallpaper = () => {
         text-align: left;
         cursor: pointer;
 
-        &:hover {
+        &:disabled {
+            cursor: default;
+            color: rgba(255, 255, 255, 0.58);
+        }
+
+        &:not(:disabled):hover {
             background-color: rgba(255, 255, 255, 0.1);
         }
     }

@@ -1,6 +1,7 @@
 <template>
     <div class="home-view">
-        <WallpaperCarousel :thumbs="wallpaperThumbnailSrcs" @selectWallpaper="onSelectWallpaper"
+        <WallpaperCarousel :thumbs="wallpaperThumbnailSrcs" :favorited="wallpaperFavoritedStates"
+            @selectWallpaper="onSelectWallpaper"
             @favoriteWallpaper="onFavoriteWallpaper" :current_wallpaper="currentWallpaper" />
     </div>
 </template>
@@ -17,7 +18,9 @@ import { download } from '@tauri-apps/plugin-upload';
 import {
     FAVORITES_SOURCE_ID,
     addFavoriteWallpaper,
+    getFavoriteRelativePath,
     getSelectedWallpaperSource,
+    readWallpaperSources,
     syncWallpaperSourceIfStale,
     WALLPAPER_SOURCE_SELECTED_EVENT,
     type WallpaperSource,
@@ -33,6 +36,7 @@ const wallpaperThumbnailPaths = ref<string[]>([])
 const wallpaperThumbnailSrcs = ref<string[]>([])
 const wallpaperFilePaths = ref<string[]>([])
 const wallpaperOriginalRelativePaths = ref<string[]>([])
+const wallpaperFavoritedStates = ref<boolean[]>([])
 
 const setWallpaper = async (file_path: string) => {
     const isWindows = navigator.userAgent.toLowerCase().includes('windows')
@@ -68,7 +72,12 @@ const onFavoriteWallpaper = async (index: number) => {
         return
     }
 
+    if (wallpaperFavoritedStates.value[index]) {
+        return
+    }
+
     const favoritesSource = await addFavoriteWallpaper(originalRelativePath)
+    wallpaperFavoritedStates.value[index] = true
     if (SelectedWallpaperSource.value?.id === FAVORITES_SOURCE_ID) {
         await loadWallpaperSource(favoritesSource)
     }
@@ -186,6 +195,7 @@ const getWallpapers = async (source: WallpaperSource) => {
     await ensureAppDataDir(thumbnailsDir)
 
     const appData = await appDataDir()
+    const favoritedPaths = getFavoritedPathSet()
     const originalFilenames = new Set<string>()
     const thumbnailFilenames = new Set<string>()
 
@@ -222,6 +232,8 @@ const getWallpapers = async (source: WallpaperSource) => {
 
             wallpaperFilePaths.value[index] = originalPath
             wallpaperOriginalRelativePaths.value[index] = originalRelativePath
+            wallpaperFavoritedStates.value[index] = source.id === FAVORITES_SOURCE_ID
+                || favoritedPaths.has(getFavoriteRelativePath(originalRelativePath))
             wallpaperThumbnailPaths.value[index] = thumbnailPath
             wallpaperThumbnailSrcs.value[index] = convertFileSrc(thumbnailPath)
         } catch (error) {
@@ -235,6 +247,7 @@ const loadWallpaperSource = async (source: WallpaperSource) => {
     currentWallpaper.value = ''
     wallpaperFilePaths.value = []
     wallpaperOriginalRelativePaths.value = []
+    wallpaperFavoritedStates.value = []
     wallpaperThumbnailPaths.value = []
     wallpaperThumbnailSrcs.value = []
     await getWallpapers(source);
@@ -256,10 +269,16 @@ onMounted(async () => {
         currentWallpaper.value = ''
         wallpaperFilePaths.value = []
         wallpaperOriginalRelativePaths.value = []
+        wallpaperFavoritedStates.value = []
         wallpaperThumbnailPaths.value = []
         wallpaperThumbnailSrcs.value = []
     })
 })
+
+const getFavoritedPathSet = () => {
+    const favoritesSource = readWallpaperSources().find((source) => source.id === FAVORITES_SOURCE_ID)
+    return new Set(favoritesSource?.data ?? [])
+}
 
 onUnmounted(() => {
     unlistenWallpaperSource?.()

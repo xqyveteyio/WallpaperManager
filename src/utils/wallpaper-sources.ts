@@ -143,6 +143,10 @@ export const addFavoriteWallpaper = async (sourceRelativePath: string) => {
     return favoritesSource
 }
 
+export const getFavoriteRelativePath = (sourceRelativePath: string) => {
+    return `${FAVORITES_ORIGINALS_DIR}/${getFavoriteFilename(sourceRelativePath)}`
+}
+
 export const upsertWallpaperSource = (source: WallpaperSource) => {
     const sources = readWallpaperSources()
     const existingIndex = sources.findIndex((item) => item.id === source.id)
