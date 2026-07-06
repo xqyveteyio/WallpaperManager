@@ -20,12 +20,11 @@ const WALLPAPER_ORIGINALS_DIR = `${WALLPAPER_DOWNLOAD_DIR}/originals`
 const WALLPAPER_THUMBNAILS_DIR = `${WALLPAPER_DOWNLOAD_DIR}/thumbnails`
 const THUMBNAIL_MAX_HEIGHT = 180
 
-const SelectedWallpaperSource = {
+var SelectedWallpaperSource: object = {
     "name": "anime_bg",
     "description": "anime_bg",
     "author": "anime_bg",
     "last_update": "2026-07-02 10:00:00",
-    "download_interval": 500,
     "data": [
         "https://images4.alphacoders.com/135/thumb-1920-1357925.png",
         "https://images8.alphacoders.com/136/thumb-1920-1362046.png",
@@ -182,10 +181,14 @@ const getWallpapers = async () => {
     }
 }
 
-
-onMounted(async () => {
+export const loadWallpaperSource = async (source: object) => {
+    SelectedWallpaperSource = source
     await getWallpapers();
-})
+}
+
+// onMounted(async () => {
+//     await getWallpapers();
+// })
 
 </script>
 
