@@ -14,12 +14,15 @@ jobs:
           - name: linux
             os: ubuntu-22.04
             args: --target x86_64-unknown-linux-gnu
+            artifact-path: src-tauri/target/x86_64-unknown-linux-gnu/release/bundle
           - name: windows
             os: windows-latest
             args: ''
+            artifact-path: src-tauri/target/release/bundle
           - name: macos
             os: macos-latest
             args: ''
+            artifact-path: src-tauri/target/release/bundle
 
     steps:
       - name: Checkout
@@ -80,3 +83,10 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           args: ${{ matrix.platform.args }}
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: wallpaper-manager-${{ matrix.platform.name }}
+          path: ${{ matrix.platform.artifact-path }}/**
+          if-no-files-found: error
