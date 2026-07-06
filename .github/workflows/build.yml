@@ -1,23 +1,32 @@
 name: Build
 
 on:
-  push:
-    branches:
-      - main
-      - master
-  pull_request:
   workflow_dispatch:
 
 jobs:
-  build-linux:
-    name: Build Linux packages
-    runs-on: ubuntu-22.04
+  build:
+    name: Build ${{ matrix.platform.name }}
+    runs-on: ${{ matrix.platform.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          - name: linux
+            os: ubuntu-22.04
+            args: --target x86_64-unknown-linux-gnu
+          - name: windows
+            os: windows-latest
+            args: ''
+          - name: macos
+            os: macos-latest
+            args: ''
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
       - name: Install Linux dependencies
+        if: matrix.platform.name == 'linux'
         run: |
           sudo apt-get update
           sudo apt-get install -y \
@@ -46,16 +55,11 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
+          cache: yarn
+          cache-dependency-path: yarn.lock
 
       - name: Enable Corepack
         run: corepack enable
-
-      - name: Setup Yarn cache
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: yarn
-          cache-dependency-path: yarn.lock
 
       - name: Install frontend dependencies
         run: yarn install --immutable
@@ -65,4 +69,4 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          args: --target x86_64-unknown-linux-gnu
+          args: ${{ matrix.platform.args }}
