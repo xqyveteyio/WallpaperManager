@@ -1,6 +1,6 @@
 <template>
     <div class="wallpaper-carousel" ref="wallpaperCarouselRef">
-        <div class="thumb-item" v-for="item in thumbs" @click="handleClick($event, item)"
+        <div class="thumb-item" v-for="(item, index) in thumbs" @click="handleClick($event, index)"
             :class="{ 'active': current_wallpaper === item }">
             <img :src="item" alt="">
         </div>
@@ -14,17 +14,17 @@ interface Props {
     thumbs?: string[]
     current_wallpaper: string
 }
-const props = withDefaults(defineProps<Props>(), {
+withDefaults(defineProps<Props>(), {
     current_wallpaper: "",
     thumbs: () => []
 })
 const emit = defineEmits<{
-    (e: 'selectWallpaper', url: string): void
+    (e: 'selectWallpaper', index: number): void
 }>()
 const wallpaperCarouselRef = ref<HTMLDivElement | null>(null)
 
-const handleClick = (event: MouseEvent, url: string) => {
-    emit('selectWallpaper', url)
+const handleClick = (event: MouseEvent, index: number) => {
+    emit('selectWallpaper', index)
     const container = wallpaperCarouselRef.value
     const target = event.currentTarget as HTMLElement
     if (container && target) {
