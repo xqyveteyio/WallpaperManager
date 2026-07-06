@@ -31,38 +31,6 @@
     "core:webview:allow-create-webview-window",
     "upload:allow-download",
     "fs:allow-appdata-read-recursive",
-    "fs:allow-appdata-write-recursive",
-    {
-      "identifier": "shell:allow-execute",
-      "allow": [
-        {
-          "name": "set-wallpaper-linux",
-          "cmd": "sh",
-          "args": [
-            {
-              "validator": ".+"
-            },
-            {
-              "validator": ".+"
-            }
-          ],
-          "sidecar": false
-        },
-        {
-          "name": "set-wallpaper-windows",
-          "cmd": "cmd",
-          "args": [
-            "/C",
-            {
-              "validator": ".+"
-            },
-            {
-              "validator": ".+"
-            }
-          ],
-          "sidecar": false
-        }
-      ]
-    }
+    "fs:allow-appdata-write-recursive"
   ]
 }

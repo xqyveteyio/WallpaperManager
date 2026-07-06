@@ -32,7 +32,6 @@ const RAW_RUNTIME_STATE =
           ["@tauri-apps/cli", "npm:2.11.4"],\
           ["@tauri-apps/plugin-fs", "npm:2.5.1"],\
           ["@tauri-apps/plugin-opener", "npm:2.5.4"],\
-          ["@tauri-apps/plugin-shell", "npm:2.3.5"],\
           ["@tauri-apps/plugin-upload", "npm:2.4.0"],\
           ["@vitejs/plugin-vue", "virtual:98b9a8a20f12613211047864ece2f89531a6bab36cf2a045bf25506cf262148c495878152d7c19d69f2151a1d5c1316c3f1701f369033493caf5813134d4b811#npm:5.2.4"],\
           ["sass", "npm:1.101.0"],\
@@ -939,16 +938,6 @@ const RAW_RUNTIME_STATE =
         "packageDependencies": [\
           ["@tauri-apps/api", "npm:2.11.1"],\
           ["@tauri-apps/plugin-opener", "npm:2.5.4"]\
-        ],\
-        "linkType": "HARD"\
-      }]\
-    ]],\
-    ["@tauri-apps/plugin-shell", [\
-      ["npm:2.3.5", {\
-        "packageLocation": "../../../.yarn/berry/cache/@tauri-apps-plugin-shell-npm-2.3.5-5121bf28da-10c0.zip/node_modules/@tauri-apps/plugin-shell/",\
-        "packageDependencies": [\
-          ["@tauri-apps/api", "npm:2.11.1"],\
-          ["@tauri-apps/plugin-shell", "npm:2.3.5"]\
         ],\
         "linkType": "HARD"\
       }]\
@@ -2216,7 +2205,6 @@ const RAW_RUNTIME_STATE =
           ["@tauri-apps/cli", "npm:2.11.4"],\
           ["@tauri-apps/plugin-fs", "npm:2.5.1"],\
           ["@tauri-apps/plugin-opener", "npm:2.5.4"],\
-          ["@tauri-apps/plugin-shell", "npm:2.3.5"],\
           ["@tauri-apps/plugin-upload", "npm:2.4.0"],\
           ["@vitejs/plugin-vue", "virtual:98b9a8a20f12613211047864ece2f89531a6bab36cf2a045bf25506cf262148c495878152d7c19d69f2151a1d5c1316c3f1701f369033493caf5813134d4b811#npm:5.2.4"],\
           ["sass", "npm:1.101.0"],\

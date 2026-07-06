@@ -9,11 +9,10 @@
 <script setup lang="ts">
 import WallpaperCarousel from '../components/WallpaperCarousel.vue';
 import { ref, onMounted, onUnmounted } from 'vue';
-import { convertFileSrc } from '@tauri-apps/api/core';
+import { convertFileSrc, invoke } from '@tauri-apps/api/core';
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
-import { appDataDir, join, resolveResource } from '@tauri-apps/api/path';
+import { appDataDir, join } from '@tauri-apps/api/path';
 import { BaseDirectory, exists, mkdir, readDir, readFile, remove, writeFile } from '@tauri-apps/plugin-fs';
-import { Command } from '@tauri-apps/plugin-shell';
 import { download } from '@tauri-apps/plugin-upload';
 import {
     FAVORITES_SOURCE_ID,
@@ -39,22 +38,7 @@ const wallpaperOriginalRelativePaths = ref<string[]>([])
 const wallpaperFavoritedStates = ref<boolean[]>([])
 
 const setWallpaper = async (file_path: string) => {
-    const isWindows = navigator.userAgent.toLowerCase().includes('windows')
-    const command = isWindows
-        ? Command.create('set-wallpaper-windows', [
-            '/C',
-            await resolveResource('scripts/windows.bat'),
-            file_path,
-        ])
-        : Command.create('set-wallpaper-linux', [
-            await resolveResource('scripts/fedora.sh'),
-            file_path,
-        ])
-
-    const output = await command.execute()
-    if (output.code !== 0) {
-        throw new Error(`设置壁纸失败: ${output.stderr || output.stdout}`)
-    }
+    await invoke('set_wallpaper', { path: file_path })
 }
 
 const onSelectWallpaper = async (index: number) => {
