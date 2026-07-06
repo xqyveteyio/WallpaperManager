@@ -11,7 +11,7 @@ import { ref, onMounted, onUnmounted } from 'vue';
 import { convertFileSrc } from '@tauri-apps/api/core';
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 import { appDataDir, join, resolveResource } from '@tauri-apps/api/path';
-import { BaseDirectory, exists, mkdir, readFile, writeFile } from '@tauri-apps/plugin-fs';
+import { BaseDirectory, exists, mkdir, readDir, readFile, remove, writeFile } from '@tauri-apps/plugin-fs';
 import { Command } from '@tauri-apps/plugin-shell';
 import { download } from '@tauri-apps/plugin-upload';
 import {
@@ -142,6 +142,18 @@ const createThumbnailData = async (sourceRelativePath: string) => {
     }
 }
 
+const cleanupCachedFiles = async (dir: string, keepFilenames: Set<string>) => {
+    const entries = await readDir(dir, { baseDir: BaseDirectory.AppData })
+
+    await Promise.all(entries.map(async (entry) => {
+        if (keepFilenames.has(entry.name)) {
+            return
+        }
+
+        await remove(`${dir}/${entry.name}`, { baseDir: BaseDirectory.AppData })
+    }))
+}
+
 const getWallpapers = async (source: WallpaperSource) => {
     const sourceDir = `${WALLPAPER_DOWNLOAD_DIR}/${source.id}`
     const originalsDir = `${sourceDir}/originals`
@@ -151,6 +163,17 @@ const getWallpapers = async (source: WallpaperSource) => {
     await ensureAppDataDir(thumbnailsDir)
 
     const appData = await appDataDir()
+    const originalFilenames = new Set<string>()
+    const thumbnailFilenames = new Set<string>()
+
+    source.data.forEach((url, index) => {
+        const originalFilename = getWallpaperFilename(url, index)
+        originalFilenames.add(originalFilename)
+        thumbnailFilenames.add(getThumbnailFilename(originalFilename))
+    })
+
+    await cleanupCachedFiles(originalsDir, originalFilenames)
+    await cleanupCachedFiles(thumbnailsDir, thumbnailFilenames)
 
     for (const [index, url] of source.data.entries()) {
         const originalFilename = getWallpaperFilename(url, index)
