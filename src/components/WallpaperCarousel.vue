@@ -110,7 +110,7 @@ const favoriteWallpaper = () => {
             position: relative;
 
             &::after {
-                content: ""; // 💡 必须写！哪怕是空字符串
+                content: "";
                 position: absolute;
                 top: 0;
                 left: 0;
