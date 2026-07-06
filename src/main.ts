@@ -5,7 +5,7 @@ import { cursorPosition, getCurrentWindow, monitorFromPoint, primaryMonitor } fr
 import "./style.css";
 import App from "./App.vue";
 import { router } from './router';
-import { createTray } from './utils/tray';
+import { createTray, refreshTrayMenu } from './utils/tray';
 import {
     MAIN_WINDOW_SETTINGS_EVENT,
     type MainWindowSettings,
@@ -78,6 +78,7 @@ const setupMainWindow = async () => {
     await appWindow.onCloseRequested(async (event) => {
         event.preventDefault();
         await appWindow.hide();
+        await refreshTrayMenu();
     });
 }
 
