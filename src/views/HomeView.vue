@@ -109,8 +109,10 @@ const getWallpaperFilename = (url: string, index: number) => {
 
 const getThumbnailFilename = (filename: string) => {
     const basename = filename.replace(/\.[^.]+$/, '')
-    return `${basename}-thumb-h${THUMBNAIL_MAX_HEIGHT}-v2.png`
+    return `${basename}-thumb-h${THUMBNAIL_MAX_HEIGHT}-v3.png`
 }
+
+const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
 const loadImage = (src: string) => {
     return new Promise<HTMLImageElement>((resolve, reject) => {
@@ -129,13 +131,57 @@ const loadImage = (src: string) => {
     })
 }
 
+const decodeImageData = async (sourceData: Uint8Array) => {
+    const objectUrl = URL.createObjectURL(new Blob([sourceData]))
+    try {
+        return await loadImage(objectUrl)
+    } finally {
+        URL.revokeObjectURL(objectUrl)
+    }
+}
+
+const readCompleteImageData = async (sourceRelativePath: string) => {
+    let lastError: unknown
+
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+        try {
+            const sourceData = await readFile(sourceRelativePath, { baseDir: BaseDirectory.AppData })
+            await decodeImageData(sourceData)
+            return sourceData
+        } catch (error) {
+            lastError = error
+            await delay(150)
+        }
+    }
+
+    throw new Error(`图片文件未完整可用: ${sourceRelativePath}, ${String(lastError)}`)
+}
+
+const downloadOriginalWallpaper = async (url: string, originalRelativePath: string, originalPath: string) => {
+    const tempRelativePath = `${originalRelativePath}.download`
+    const tempPath = `${originalPath}.download`
+
+    if (await exists(tempRelativePath, { baseDir: BaseDirectory.AppData })) {
+        await remove(tempRelativePath, { baseDir: BaseDirectory.AppData })
+    }
+
+    try {
+        await download(url, tempPath)
+        const sourceData = await readCompleteImageData(tempRelativePath)
+        await writeFile(originalRelativePath, sourceData, { baseDir: BaseDirectory.AppData })
+    } finally {
+        if (await exists(tempRelativePath, { baseDir: BaseDirectory.AppData })) {
+            await remove(tempRelativePath, { baseDir: BaseDirectory.AppData })
+        }
+    }
+}
+
 const createThumbnailData = async (sourceRelativePath: string) => {
-    const sourceData = await readFile(sourceRelativePath, { baseDir: BaseDirectory.AppData })
+    const sourceData = await readCompleteImageData(sourceRelativePath)
     const objectUrl = URL.createObjectURL(new Blob([sourceData]))
 
     try {
         const image = await loadImage(objectUrl)
-
         const scale = Math.min(THUMBNAIL_MAX_HEIGHT / image.naturalHeight, 1)
         const width = Math.max(1, Math.round(image.naturalWidth * scale))
         const height = Math.max(1, Math.round(image.naturalHeight * scale))
@@ -220,7 +266,7 @@ const getWallpapers = async (source: WallpaperSource) => {
 
         try {
             if (source.id !== FAVORITES_SOURCE_ID && !(await exists(originalRelativePath, { baseDir: BaseDirectory.AppData }))) {
-                await download(url, originalPath)
+                await downloadOriginalWallpaper(url, originalRelativePath, originalPath)
             }
 
             if (!(await exists(thumbnailRelativePath, { baseDir: BaseDirectory.AppData }))) {
